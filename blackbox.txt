@@ -1,0 +1,688 @@
+projecte d'un blog a php
+
+SQL
+MariaDB [blog]> show tables;
++----------------+
+| Tables_in_blog |
++----------------+
+| categories     |
+| entrades       |
+| usuaris        |
++----------------+
+3 rows in set (0,000 sec)
+
+MariaDB [blog]> describe categories;
++--------+--------------+------+-----+---------+----------------+
+| Field  | Type         | Null | Key | Default | Extra          |
++--------+--------------+------+-----+---------+----------------+
+| id     | int(255)     | NO   | PRI | NULL    | auto_increment |
+| nombre | varchar(100) | YES  |     | NULL    |                |
++--------+--------------+------+-----+---------+----------------+
+2 rows in set (0,000 sec)
+
+MariaDB [blog]> describe entrades;
++--------------+--------------+------+-----+---------+----------------+
+| Field        | Type         | Null | Key | Default | Extra          |
++--------------+--------------+------+-----+---------+----------------+
+| id           | int(255)     | NO   | PRI | NULL    | auto_increment |
+| usuari_id    | int(255)     | NO   | MUL | NULL    |                |
+| categoria_id | int(255)     | NO   | MUL | NULL    |                |
+| titol        | varchar(255) | NO   |     | NULL    |                |
+| descripcio   | mediumtext   | YES  |     | NULL    |                |
+| data         | date         | NO   |     | NULL    |                |
++--------------+--------------+------+-----+---------+----------------+
+6 rows in set (0,000 sec)
+
+MariaDB [blog]> describe usuaris;
++----------+--------------+------+-----+---------+----------------+
+| Field    | Type         | Null | Key | Default | Extra          |
++----------+--------------+------+-----+---------+----------------+
+| id       | int(255)     | NO   | PRI | NULL    | auto_increment |
+| nom      | varchar(100) | NO   |     | NULL    |                |
+| cognom   | varchar(100) | NO   |     | NULL    |                |
+| email    | varchar(255) | NO   | UNI | NULL    |                |
+| password | varchar(255) | NO   |     | NULL    |                |
+| data     | date         | NO   |     | NULL    |                |
++----------+--------------+------+-----+---------+----------------+
+6 rows in set (0,000 sec)
+
+index.php
+<?php 
+session_start();
+include('includes/header.php');
+include('includes/session.php');
+
+$errors = get_errors('errors');
+$success = get_messages('success');
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['page'])) {
+    $_SESSION['current_page'] = $_POST['page'];
+}
+?>
+
+<main class="container">
+    <?php 
+    if (isset($_GET['page']) && $_GET['page'] === 'post') {
+        include('form_post.php');
+    } else if (isset($_GET['page']) && $_GET['page'] === 'category') {
+        include('create_category.php');
+    } else {
+        include('includes/posts.php');
+    }
+
+    include('includes/aside.php'); 
+    ?>
+</main>
+
+<?php include('includes/footer.php'); ?>
+
+includes/header.php
+<?php
+include('config/db.php');
+
+// Consulta per obtenir les 3 categories amb mes posts
+$sql = "
+    SELECT cat.nombre, COUNT(entry.id) AS post_count
+    FROM categories cat
+    LEFT JOIN entrades entry ON cat.id = entry.categoria_id
+    GROUP BY cat.id
+    ORDER BY post_count DESC
+    LIMIT 3
+";
+$result = mysqli_query($db, $sql);
+
+$categories = [];
+if (mysqli_num_rows($result) > 0) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $categories[] = $row;
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+    <nav>
+        <ul>
+            <li><a href="index.php">Inici</a></li>
+            <?php
+            foreach ($categories as $category) {
+                echo "<li><a href='index.php?categoria=".$category['nombre']."'>".$category['nombre']."</a></li>";
+            }
+            ?>
+        </ul>
+    </nav>
+</header>
+
+
+includes/posts.php
+<section class="posts">
+    <h1>Benvingut al Blog!</h1>
+    <?php
+    $current_user_id = $_SESSION['usuari_id'];
+
+    if ($db->connect_error) {
+        die("La connexió ha fallat: " . $db->connect_error);
+    }
+
+    if (isset($_GET['categoria'])) {
+        $categoria_id = (int)$_GET['categoria']; // Sanear el valor para evitar inyecciones SQL
+        $sql = "SELECT * FROM entrades WHERE categoria_id = ? ORDER BY data DESC";
+        $stmt = $db->prepare($sql);
+        $stmt->bind_param("i", $categoria_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    } else {
+        // Consulta SQL per obtenir tots els posts de la taula 'entrades', ordenades per data de forma descendent
+        $sql = "SELECT * FROM entrades ORDER BY data DESC";
+        $result = $db->query($sql);
+    }
+    
+    // Comprova si hi ha resultats a la consulta
+    if ($result->num_rows > 0) {
+        while($row = $result->fetch_assoc()) {
+            $categoria_sql = "SELECT nombre FROM categories WHERE id = ".$row['categoria_id'];
+            $categoria_result = $db->query($categoria_sql);
+            $categoria = $categoria_result->fetch_assoc();
+            
+            // Mostra les dades de cada entrada dins d'un div amb classe 'post'
+            echo "<div class='post'>
+                    <h2>".$row['titol']."</h2>
+                    <p>".$row['descripcio']."</p>
+                    <p class='post-category'>#".$categoria['nombre']."</p>";
+
+            if ($row['usuari_id'] == $current_user_id) {
+                echo "<a href='index.php?page=post&id=".$row['id']."' class='button-post'>Editar</a> 
+                      <a href='actions/delete_post.php?id=".$row['id']."' class='button-post' data-id='".$row['id']."'>Esborrar</a>";
+            }
+
+            echo "</div>";
+        }
+    } else {
+        // Si no hi ha entrades
+        echo "<p>No hi ha entrades.</p>";
+    }
+
+    $db->close();
+    ?>
+</section>
+
+includes/aside.php
+<aside class="sidebar">
+    <?php if(!isset($_SESSION['usuari_id'])): ?>
+        <div class="forms">
+            <div class="content">
+                <?php 
+                include('includes/login.php'); 
+                ?>
+            </div>
+
+            <div class="content">
+                <?php 
+                include('includes/register.php');
+                ?>
+            </div>
+        </div>
+    <?php else: ?>
+    <div class="profile">
+        <img src="/projecte/pages/img/profile_img.png" alt="Profile Avatar" class="profile-avatar">
+        
+        <p class="profile-text">Hola, <?php echo htmlspecialchars($_SESSION['usuari_nom']); ?>!</p>
+
+        <ul class="profile-options">
+            <li><a href="index.php?page=post"><i class="icon-plus"></i>Crear Entrada</a></li>
+            <li><a href="index.php?page=category"><i class="icon-edit"></i>Crear Categoria</a></li>
+            <li><a href="logout.php"><i class="icon-logout"></i>Tancar Sessió</a></li>
+        </ul>
+    </div>
+    <?php endif; ?>
+</aside>
+
+includes/form_post.php
+<?php
+session_start();
+if (!isset($_SESSION['usuari_id'])) {
+    header("Location: login.php");
+    exit;
+}
+
+require_once 'config/db.php';
+
+$post_id = isset($_GET['id']) ? $_GET['id'] : null;
+$is_editing = $post_id !== null;
+$post_data = [];
+
+if ($is_editing) {
+    // Obtener datos del post para rellenar el formulario
+    $stmt = $db->prepare("SELECT * FROM entrades WHERE id = ? AND usuari_id = ?");
+    $stmt->bind_param("ii", $post_id, $_SESSION['usuari_id']);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $post_data = $result->fetch_assoc();
+
+    if (!$post_data) {
+        echo "Entrada no encontrada o no tienes permiso para editarla.";
+        exit;
+    }
+}
+?>
+
+<main class="form-container">
+    <h2 class="form-title">
+        <?= $is_editing ? "Edita la teva entrada" : "Crea una nova entrada" ?>
+    </h2>
+    <form class="form" action="actions/post_action.php" method="POST">
+        <!-- isedit == true -->
+        <?php if ($is_editing): ?>
+            <input type="hidden" name="id" value="<?= htmlspecialchars($post_data['id']) ?>">
+        <?php endif; ?>
+
+        <label class="form-label" for="titol">Títol:</label>
+        <input class="form-input" type="text" name="titol" id="titol" value="<?= htmlspecialchars($post_data['titol'] ?? '') ?>" required>
+        
+        <label class="form-label" for="descripcio">Descripció:</label>
+        <textarea class="form-textarea" name="descripcio" id="descripcio" rows="4" required><?= htmlspecialchars($post_data['descripcio'] ?? '') ?></textarea>
+        
+        <label class="form-label" for="categoria">Categoria:</label>
+        <select class="form-select" name="categoria" id="categoria">
+            <?php
+            // Consulta les categories
+            $sql = "SELECT * FROM categories";
+            $result = mysqli_query($db, $sql);
+
+            // Verificar si la consulta devolvió resultados
+            while ($row = mysqli_fetch_assoc($result)) {
+                $selected = $is_editing && $post_data['categoria_id'] == $row['id'] ? 'selected' : '';
+                echo "<option value='".$row['id']."' $selected>".$row['nombre']."</option>";
+            }
+            ?>
+        </select>
+        
+        <button class="form-button" type="submit">
+            <?php echo $is_editing ? "Editar" : "Crear"; ?>
+        </button>
+    </form>
+</main>
+
+
+actions/post_action.php
+<?php
+session_start();
+require_once '../config/db.php';
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $id = isset($_POST['id']) ? $_POST['id'] : null;
+    $titol = trim($_POST['titol']);
+    $descripcio = trim($_POST['descripcio']);
+    $categoria = $_POST['categoria'];
+    $usuari_id = $_SESSION['usuari_id'];
+
+    if ($id) {
+    // Editar
+        $sql = "UPDATE entrades SET titol = ?, descripcio = ?, categoria_id = ? WHERE id = ? AND usuari_id = ?";
+        $stmt = $db->prepare($sql);
+        $stmt->bind_param("ssiii", $titol, $descripcio, $categoria, $id, $usuari_id);
+
+        if ($stmt->execute()) {
+            header("Location: ../index.php");
+            exit;
+        } else {
+            echo "Error al editar l'entrada.";
+        }
+    } else {
+    // Crear
+        $sql = "INSERT INTO entrades (usuari_id, categoria_id, titol, descripcio, data) 
+                VALUES (?, ?, ?, ?, NOW())";
+        $stmt = $db->prepare($sql);
+        $stmt->bind_param("iiss", $usuari_id, $categoria, $titol, $descripcio);
+
+        if ($stmt->execute()) {
+            header("Location: ../index.php");
+            exit;
+        } else {
+            echo "Error al crear l'entrada.";
+        }
+
+        $db->close();
+    }
+}
+?>
+
+
+style.css
+/* Paleta de colores */
+:root {
+    /* Base Colors */
+    --primary-color: #007BFF;
+    --secondary-color: #00C6FF;
+
+    /* Elements colors */
+    --accent-color: #ff8120;
+
+    /* Background Colors */
+    --background-color: #F9F9F9;
+
+    /* Text Colors */
+    --text-1: #2E2E2E;
+    --text-2: #575757;
+    --text-3: #9E9E9E;
+
+    /* Interaction Colors */
+    --hover-color: #ff5900;
+    --link-color: #FF6F00;
+
+    /* Additional Accent Colors */
+    --success-color: #2ECC71;
+    --warning-color: #F39C12;
+    --error-color: #E74C3C;
+
+    /* Form and Interactive Elements */
+    --form-background: rgba(255, 255, 255, 0.8);
+    --border-color: #DDDDDD;
+
+    /* Elevation Colors */
+    --shadow-color: rgba(0, 0, 0, 0.15);
+}
+
+/* General */
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: var(--background-color);
+    color: var(--text-1);
+}
+
+/* Encabezado */
+header {
+    padding: 15px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: var(--primary-color);
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+header h1 {
+    margin: 0;
+    color: white;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    margin: 15px 0 0 0;
+    padding: 0;
+}
+
+nav ul li {
+    margin: 0 20px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    font-weight: 500;
+    color: white;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+nav ul li a:hover {
+    opacity: 1;
+}
+
+/* Contenedor principal */
+.container {
+    display: flex;
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 20px;
+    gap: 30px;
+}
+
+/* Posts */
+.posts {
+    flex: 0 0 69%;
+}
+
+.post {
+    padding: 25px;
+    margin-bottom: 25px;
+    border-radius: 12px;
+    transition: transform 0.2s ease;
+    background-color: white;
+    border: 1px solid var(--border-color);
+}
+
+.post:hover {
+    box-shadow: 0 4px 6px rgba(74, 78, 207, 0.1);
+}
+
+.post h2 {
+    margin: 0;
+    font-size: 24px;
+    color: var(--text-2);
+}
+
+.post p {
+    margin: 15px 0;
+    color: var(--text-3);
+}
+
+.post a {
+    text-decoration: none;
+    font-weight: 500;
+    margin-right: 15px;
+    color: var(--link-color);
+    transition: color 0.2s ease;
+}
+
+.post a:hover {
+    color: var(--hover-color);
+    text-decoration: underline;
+}
+
+.post-category {
+    font-size: 0.8rem;
+}
+
+.post-category a {
+    color: #007BFF;
+    text-decoration: none;
+}
+
+.post-category a:hover {
+    text-decoration: underline;
+}
+
+.post button {
+    padding: 10px 20px;
+    color: var(--accent-color);
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 5px;
+}
+
+.post button:hover {
+    color: var(--hover-color);
+}
+
+/* Sidebar */
+.sidebar {
+    flex: 0 0 29%;
+    position: static;
+    padding: 15px;
+    margin-left: -25px;
+    height: auto;
+    overflow: none;
+}
+
+.sidebar h2 {
+    font-size: 12px;
+    margin-top: 5px;
+    margin-bottom: -5px;
+    color: var(--text-2);
+}
+
+/* Formulario de Login y Registro */
+.forms {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+}
+
+.sidebar form {
+    width: 90%;
+    margin: 0 auto;
+    border-radius: 12px;
+    padding: 15px;
+    background-color: var(--form-background);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    
+}
+
+.sidebar label {
+    display: block;
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+    color: var(--text-3);
+    font-weight: 500;
+}
+
+.sidebar input {
+    width: 90%;
+    padding: 10px;
+    font-size: 0.8rem;
+    margin-bottom: 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    transition: border-color 0.2s ease;
+}
+
+.sidebar button {
+    width: 8em;
+    padding: 10px;
+    font-size: 0.8rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: var(--accent-color);
+    color: white;
+    transition: background-color 0.2s ease;
+}
+
+.sidebar button:hover {
+    background-color: var(--hover-color);
+}
+
+/* Missatges */
+.error-message {
+    font-size: 10px;
+    color: var(--error-color);
+    font-weight: bold;
+}
+
+.success-message {
+    color: var(--success-color);
+    font-weight: bold;
+}
+
+/* Profile */
+.profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 25px;
+    border-radius: 16px;
+    background: linear-gradient(145deg, var(--form-background) 0%, rgba(255,255,255,0.05) 100%);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    gap: 20px;
+}
+
+.profile-avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--accent-color);
+}
+
+.profile-text {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-1);
+}
+
+.profile-options {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.profile-options a {
+    display: block;
+    text-decoration: none;
+    background-color: var(--accent-color);
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    transition: background-color 0.2s ease;
+}
+
+.profile-options a:hover {
+    background-color: var(--hover-color);
+}
+
+/* Create post*/
+.create-post-container {
+    width: 90%;
+    margin: 30px auto;
+    padding: 30px;
+    background-color: white;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.create-post-title {
+    text-align: center;
+    color: var(--text-2);
+    margin-bottom: 25px;
+}
+
+.create-post-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.create-post-label {
+    margin-bottom: 8px;
+    color: var(--text-2);
+    font-weight: 500;
+}
+
+.create-post-input,
+.create-post-textarea,
+.create-post-select {
+    padding: 12px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.create-post-textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.create-post-button {
+    align-self: center;
+    padding: 12px 25px;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.create-post-button:hover {
+    background-color: var(--hover-color);
+}
+
+/* Pie de página */
+footer {
+    text-align: center;
+    padding: 15px;
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+    box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
+    background-color: var(--primary-color);
+    color: white;
+}
+
+
+ayudame a posicionar bien el aside y los posts. sin que se superpongan, que ocupe cada uno su espacio

@@ -1,0 +1,223 @@
+index.php
+<?php 
+session_start();
+include('includes/header.php');
+include('includes/session.php');
+
+$errors = get_errors('errors');
+$success = get_messages('success');
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['page'])) {
+    $_SESSION['current_page'] = $_POST['page'];
+}
+?>
+
+<main class="container">
+    <?php 
+    include('includes/posts.php');
+
+    include('includes/aside.php'); 
+    ?>
+</main>
+
+<?php include('includes/footer.php'); ?>
+
+header.php
+<?php
+include('config/db.php');
+
+// Consulta per obtenir les 3 categories amb mes posts
+$sql = "
+    SELECT cat.nombre, COUNT(entry.id) AS post_count
+    FROM categories cat
+    LEFT JOIN entrades entry ON cat.id = entry.categoria_id
+    GROUP BY cat.id
+    ORDER BY post_count DESC
+    LIMIT 3
+";
+$result = mysqli_query($db, $sql);
+
+$categories = [];
+if (mysqli_num_rows($result) > 0) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $categories[] = $row;
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+        <nav>
+            <ul>
+                <li><a href="index.php">Inici</a></li>
+                <?php
+                foreach ($categories as $category) {
+                    echo "<li><a href=''>".$category['nombre']."</a></li>";
+                }
+                ?>
+            </ul>
+        </nav>
+    </header>
+
+session.php
+<?php
+// Funcio para registrar un error
+function set_error($error_key, $error_message) {
+    $_SESSION['errors'][$error_key] = $error_message;
+}
+
+// Funcio para registrar un missatge
+function set_message($key, $message) {
+    $_SESSION[$key] = $message;
+}
+
+// Funcio per obtenir i netejar els errors
+function get_errors() {
+    if (isset($_SESSION['errors'])) {
+        $errors = $_SESSION['errors'];
+        unset($_SESSION['errors']);
+        return $errors;
+    }
+    return [];
+}
+// Funcio per obtenir i netejar un missatge
+function get_messages($key) {
+    if (isset($_SESSION[$key])) {
+        $data = $_SESSION[$key];
+        unset($_SESSION[$key]);
+        return $data;
+    }
+    return null;
+}
+
+posts.php
+<section class="posts">
+    <h1>Benvingut al Blog!</h1>
+    <?php
+
+    if ($db->connect_error) {
+        die("La connexió ha fallat: " . $db->connect_error);
+    }
+
+    // Consulta SQL per obtenir tots els posts de la taula 'entrades', ordenades per data de forma descendent
+    $sql = "SELECT * FROM entrades ORDER BY data DESC";
+    $result = $db->query($sql);
+    
+    // Comprova si hi ha resultats a la consulta
+    if ($result->num_rows > 0) {
+        while($row = $result->fetch_assoc()) {
+            $categoria_sql = "SELECT nombre FROM categories WHERE id = ".$row['categoria_id'];
+            $categoria_result = $db->query($categoria_sql);
+            $categoria = $categoria_result->fetch_assoc();
+            
+            // Mostra les dades de cada entrada dins d'un div amb classe 'post'
+            echo "<div class='post'>
+                    <h2>".$row['titol']."</h2>
+                    <p>".$row['descripcio']."</p>
+                    <p class='post-category'>#".$categoria['nombre']."</p>
+                    <a href='edit_post.php?id=".$row['id']."'>Editar</a> 
+                    <form action='delete_post.php' method='POST' onsubmit='return confirm('Estàs segur que vols eliminar aquesta entrada?');>
+                        <input type='hidden' name='id' value='".$row['id'].";>
+                        <button type='submit'>Esborrar</button>
+                    </form>
+                  </div>";
+        }
+    } else {
+        // Si no hi ha entrades
+        echo "<p>No hi ha entrades.</p>";
+    }
+
+    $db->close();
+    ?>
+</section>
+
+aside.php
+<aside class="sidebar">
+    <?php if(!isset($_SESSION['usuari_id'])): ?>
+        <div class="forms">
+            <div class="content">
+                <?php 
+                include('includes/login.php'); 
+                ?>
+            </div>
+
+            <div class="content">
+                <?php 
+                include('includes/register.php');
+                ?>
+            </div>
+        </div>
+    <?php else: ?>
+    <div class="profile">
+        <img src="/projecte/pages/img/profile_img.png" alt="Profile Avatar" class="profile-avatar">
+        
+        <p class="profile-text">Hola, <?php echo htmlspecialchars($_SESSION['usuari_nom']); ?>!</p>
+
+        <ul class="profile-options">
+            <li><a href="create_post.php"><i class="icon-plus"></i>Crear Entrada</a></li>
+            <li><a href="edit_user.php"><i class="icon-edit"></i>Editar Perfil</a></li>
+            <li><a href="logout.php"><i class="icon-logout"></i>Tancar Sessió</a></li>
+        </ul>
+    </div>
+    <?php endif; ?>
+</aside>
+
+login.php
+<div class="login">
+    <span class="error-message"><?php echo $errors['invalid_credentials'] ?? ''; ?></span>
+
+    <form class="login-form" action="actions/login_action.php" method="POST">
+        <h2>Iniciar Sessió</h2>
+        <label for="email">Email:</label>
+        <input type="email" name="email" id="email" required>
+        
+        <label for="password">Contrasenya:</label>
+        <input type="password" name="password" id="password" required>
+        
+        <button type="submit">Entrar</button>
+    </form>
+</div>
+
+register.php
+<div class="register">
+    <form class="register-form" action="actions/register_action.php" method="POST">
+        <span class="error-message"><?php echo $errors['error_register'] ?? ''; ?></span>
+        <span class="success-message"><?php echo $success; ?></span>
+    
+        <h2>Registrat</h2>
+        <label for="nom">Nom:</label>
+        <input type="text" name="nom" id="nom" >
+        <span class="error-message"><?php echo $errors['invalid_nomCognom'] ?? ''; ?></span>
+        
+        <label for="cognom">Cognom:</label>
+        <input type="text" name="cognom" id="cognom">
+        <span class="error-message"><?php echo $errors['invalid_nomCognom'] ?? ''; ?></span>
+        
+        <label for="email">Email:</label>
+        <input type="email" name="email" id="email">
+        <span class="error-message"><?php echo $errors['invalid_email'] ?? ''; ?></span>
+        
+        <label for="password">Contrasenya:</label>
+        <input type="password" name="password" id="password">
+        <span class="error-message"><?php echo $errors['invalid_password'] ?? ''; ?></span>
+        <br>
+        
+        <button type="submit">Registrar-se</button>
+    </form>
+</div>
+
+
+footer.php
+<footer>
+    <p>&copy; 2024 Blog Project</p>
+</footer>
+</body>
+</html>
