@@ -16,7 +16,7 @@
     <?php else: ?>
     <div class="profile">
         <div class="profile-container">
-            <img src="/projecte/pages/img/profile_img.png" alt="Profile Avatar" class="profile-avatar">
+            <img src="img/profile_img.png" alt="Profile Avatar" class="profile-avatar">
             <a href="index.php?page=form_profile" class="edit-icon">
                 <i class="fas fa-pencil-alt"></i>
             </a>

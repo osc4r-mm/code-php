@@ -29,7 +29,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         $post = $result->fetch_assoc();
         $post_date = date("d/m/Y H:i:s", strtotime($post['data']));
         
-        echo "<section class='post-detail'>
+        echo "<div class='post-detail'>
                 <h1 class='post-title'>".$post['titol']."</h1>
                 <div class='post-meta'>
                     <p>Publicat per: <strong>".$post['autor_nom']." ".$post['autor_cognom']."</strong></p>
@@ -41,7 +41,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         if ($post['usuari_id'] == $current_user_id) {
             echo "<div class='post-actions'>
                     <a href='index.php?page=form_post&id=".$post['id']."' class='button-post'>Editar</a> 
-                    <a href='actions/delete_post.php?id=".$post['id']."' class='button-post' data-id='".$post['id']."'>Esborrar</a>
+                    <a href='actions/delete_post.php?id=".$post['id']."' class='button-post' data-id='".$post['id']."'onclick='return confirm(\"Estàs segur que vols esborrar aquest post?\");'>Esborrar</a>
                   </div>";
         }
 
@@ -49,7 +49,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
                 <div class='post-content'>
                     <p>".nl2br($post['descripcio'])."</p>
                 </div>
-            </section>";
+            </div>";
     } else {
         echo "<p>El post no s'ha trobat.</p>";
     }

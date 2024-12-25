@@ -144,7 +144,7 @@ nav ul li a:hover {
     margin: 20px auto;
     padding: 0 20px;
     gap: 30px;
-    margin-bottom: 100px;
+    margin-bottom: 125px;
 }
 
 /* Post list */
@@ -173,7 +173,7 @@ nav ul li a:hover {
 .post h2 {
     margin: 0;
     font-size: 26px;
-    color: #333;
+    color: var(--text-1);
     font-weight: bold;
     transition: color 0.3s ease;
     cursor: pointer;
@@ -234,15 +234,166 @@ nav ul li a:hover {
     color: var(--secondary-color);
 }
 
+/* Paginacio */
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    font-size: 1rem;
+}
+
+.pagination a, 
+.pagination .current-page, 
+.pagination .dots {
+    margin: 0 3px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    text-decoration: none;
+    font-weight: bold;
+    text-align: center;
+    color: white;
+    border-radius: 5px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.pagination .current-page {
+    background-color: var(--secondary-color);
+    cursor: default;
+}
+
+.pagination a {
+    background-color: var(--primary-color);
+
+}
+
+.pagination a:hover {
+    background-color: var(--hover-color);
+}
+
+.pagination .dots {
+    margin: 0;
+    margin-top: 15px;
+    background-color: transparent;
+    color: var(--text-1);
+    font-size: 0.9rem;
+    padding: 0;
+    cursor: default;
+}
+
+.pagination-arrow {
+    padding: 8px 10px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 5px;
+    transition: background-color 0.2s ease;
+}
+
+.pagination-arrow:hover {
+    background-color: var(--hover-color);
+    transform: scale(1.05);
+}
+
+.pagination-form {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 10px;
+    justify-content: center;
+    width: 100%; /* Ocupar el ancho completo */
+}
+
+.pagination-form input {
+    width: 50px;
+    padding: 6px;
+    font-size: 0.9rem;
+    border: 1px solid var(--secondary-color);
+    border-radius: 5px;
+    text-align: center;
+}
+
+.pagination-form button {
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.pagination-form button:hover {
+    background-color: var(--hover-color);
+    transform: scale(1.05);
+}
+
+/* Paginacio responsive*/
+@media (max-width: 768px) {
+    .pagination {
+        gap: 4px;
+    }
+
+    .pagination a,
+    .pagination .current-page,
+    .pagination .dots,
+    .pagination-arrow {
+        padding: 6px 8px;
+        font-size: 0.8rem;
+    }
+
+    .pagination-form input {
+        width: 45px;
+        padding: 5px;
+    }
+
+    .pagination-form button {
+        padding: 5px 8px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .pagination {
+        gap: 2px;
+        font-size: 0.8rem;
+    }
+
+    .pagination a,
+    .pagination .current-page,
+    .pagination .dots,
+    .pagination-arrow {
+        padding: 4px 6px;
+        font-size: 0.7rem;
+    }
+
+    .pagination-form {
+        margin-top: 10px;
+    }
+
+    .pagination-form input {
+        width: 40px;
+        padding: 4px;
+        font-size: 0.8rem;
+    }
+
+    .pagination-form button {
+        padding: 4px 6px;
+        font-size: 0.8rem;
+    }
+}
+
 /* Post */
 .post-detail {
     width: 69%;
     margin: 15px auto;
     padding: 20px;
     background-color: #fdfdfd;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     border: 1px solid #ddd;
     border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     font-family: 'Arial', sans-serif;
     text-align: center;
 }
@@ -369,6 +520,107 @@ nav ul li a:hover {
     background-color: #dc3545;
 }
 
+/* about */
+.about {
+    width: 69%;
+    margin: 15px auto;
+    padding: 20px;
+    background-color: #fdfdfd;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ddd;
+    border-radius: 10px;
+}
+
+.about .button {
+    width: 8em;
+    padding: 10px;
+    font-size: 0.8rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: var(--accent-color);
+    color: white;
+    transition: background-color 0.2s ease;
+}
+
+.about .button:hover {
+    background-color: var(--hover-color);
+}
+
+.mail {
+    color: blue;
+}
+
+/* contact */
+.contact {
+    width: 60%;
+    margin: 30px auto;
+    padding: 20px;
+    background-color: var(--form-background);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 4px 6px var(--shadow-color);
+    font-family: Arial, sans-serif;
+    color: var(--text-1);
+}
+
+.contact h1 {
+    text-align: center;
+    font-size: 24px;
+    color: var(--text-1);
+    margin-bottom: 15px;
+}
+
+.contact p {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-2);
+    margin-bottom: 20px;
+}
+
+.contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.contact-form label {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--text-2);
+}
+
+.contact-form input,
+.contact-form textarea {
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.contact-form textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.contact-form button {
+    padding: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    background-color: var(--accent-color);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.contact-form button:hover {
+    background-color: var(--hover-color);
+    transform: scale(1.05);
+}
 
 /* Sidebar */
 .sidebar {
@@ -580,6 +832,57 @@ nav ul li a:hover {
     background-color: var(--hover-color);
 }
 
+/* Footer General */
+footer {
+    text-align: center;
+    padding: 10px;
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+    box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 0.9rem;
+}
+
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Enlaces del Footer */
+.footer-links {
+    display: flex;
+    gap: 15px;
+}
+
+.footer-links a {
+    color: white;
+    text-decoration: none;
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.footer-links a:hover {
+    color: var(--hover-color);
+    font-weight: bold;
+    transform: translateY(-3px);
+}
+
+/* Responsividad del Footer */
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .footer-links {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
 /* Missatges */
 .error-message {
     color: var(--error-color);
@@ -589,16 +892,4 @@ nav ul li a:hover {
 .success-message {
     color: var(--success-color);
     font-weight: bold;
-}
-
-/* Pie de página */
-footer {
-    text-align: center;
-    padding: 15px;
-    position: fixed;
-    width: 100%;
-    bottom: 0;
-    box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
-    background-color: var(--primary-color);
-    color: white;
 }
