@@ -61,11 +61,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['page'])) {
 ?>
 
 <main class="container">
+    <!-- Canvia l'include -->
     <?php 
-    if (isset($_GET['page']) && $_GET['page'] === 'post') {
-        include('form_post.php');
-    } else if (isset($_GET['page']) && $_GET['page'] === 'category') {
-        include('create_category.php');
+    if (isset($_GET['page'])) {
+        if ($_GET['page'] === 'form_post') {
+            include('includes/form_post.php');
+        } else if ($_GET['page'] === 'post') {
+            include('includes/post.php');
+        } else if ($_GET['page'] === 'category') {
+            include('includes/create_category.php');
+        } else if ($_GET['page'] === 'form_profile') {
+            include('includes/form_profile.php');
+        } else if ($_GET['page'] === 'about') {
+            include('includes/about.php');
+        } else if ($_GET['page'] === 'contact') {
+            include('includes/contact.php');
+        } 
     } else {
         include('includes/posts.php');
     }
@@ -80,14 +91,14 @@ includes/header.php
 <?php
 include('config/db.php');
 
-// Consulta per obtenir les 3 categories amb mes posts
+// Consulta per obtenir les 5 categories amb mes posts
 $sql = "
     SELECT cat.nombre, COUNT(entry.id) AS post_count
     FROM categories cat
     LEFT JOIN entrades entry ON cat.id = entry.categoria_id
     GROUP BY cat.id
     ORDER BY post_count DESC
-    LIMIT 3
+    LIMIT 5
 ";
 $result = mysqli_query($db, $sql);
 
@@ -106,69 +117,182 @@ if (mysqli_num_rows($result) > 0) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blog</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://kit.fontawesome.com/f370f9c555.js" crossorigin="anonymous"></script>
 </head>
 <body>
 <header>
-    <nav>
-        <ul>
+        <nav>
+        <span class="menu-btn" onclick="toggleMenu()">&#9776;</span>
+
+        <ul id="menu">
             <li><a href="index.php">Inici</a></li>
+
+            <!-- Mostrems les 5 categorías -->
             <?php
             foreach ($categories as $category) {
                 echo "<li><a href='index.php?categoria=".$category['nombre']."'>".$category['nombre']."</a></li>";
             }
             ?>
         </ul>
-    </nav>
-</header>
-
+        </nav>
+        <script>
+            function toggleMenu() {
+                var menu = document.getElementById('menu');
+                menu.classList.toggle('show');
+            }
+        </script>
+    </header>
 
 includes/posts.php
 <section class="posts">
-    <h1>Benvingut al Blog!</h1>
     <?php
     $current_user_id = $_SESSION['usuari_id'];
+    $posts_per_page = 5;
+    $current_page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+    $offset = ($current_page - 1) * $posts_per_page;
 
     if ($db->connect_error) {
         die("La connexió ha fallat: " . $db->connect_error);
     }
 
     if (isset($_GET['categoria'])) {
-        $categoria_id = (int)$_GET['categoria']; // Sanear el valor para evitar inyecciones SQL
-        $sql = "SELECT * FROM entrades WHERE categoria_id = ? ORDER BY data DESC";
-        $stmt = $db->prepare($sql);
-        $stmt->bind_param("i", $categoria_id);
+        $categoria_nombre = $_GET['categoria'];
+        
+        // Mostra el títol de la categoria
+        echo "<h1>Posts de la categoria: " . htmlspecialchars($categoria_nombre) . "</h1>";
+
+        // Consulta per obtenir l'id de la categoria
+        $categoria_sql = "SELECT id FROM categories WHERE nombre = ?";
+        $stmt = $db->prepare($categoria_sql);
+        $stmt->bind_param("s", $categoria_nombre); 
         $stmt->execute();
-        $result = $stmt->get_result();
+        $categoria_result = $stmt->get_result();
+
+        if ($categoria_result->num_rows > 0) {
+            $categoria = $categoria_result->fetch_assoc();
+            $categoria_id = $categoria['id'];
+
+            // Total de posts a la categoria
+            $count_sql = "SELECT COUNT(*) AS total FROM entrades WHERE categoria_id = ?";
+            $stmt = $db->prepare($count_sql);
+            $stmt->bind_param("i", $categoria_id);
+            $stmt->execute();
+            $count_result = $stmt->get_result();
+            $total_posts = $count_result->fetch_assoc()['total'];
+            
+            // Consulta els posts que corresponguin a l'id
+            $sql = "
+                SELECT e.*, u.nom AS autor_nom, u.cognom AS autor_cognom, c.nombre AS categoria_nom 
+                FROM entrades e
+                JOIN usuaris u ON e.usuari_id = u.id
+                JOIN categories c ON e.categoria_id = c.id
+                WHERE e.categoria_id = ? 
+                ORDER BY e.data DESC
+                LIMIT ? OFFSET ?
+            ";
+            $stmt = $db->prepare($sql);
+            $stmt->bind_param("iii", $categoria_id, $posts_per_page, $offset);
+            $stmt->execute();
+            $result = $stmt->get_result();
+        }
     } else {
-        // Consulta SQL per obtenir tots els posts de la taula 'entrades', ordenades per data de forma descendent
-        $sql = "SELECT * FROM entrades ORDER BY data DESC";
+        echo "<h1>Benvingut al Blog!</h1>";
+
+        // Total de posts
+        $count_sql = "SELECT COUNT(*) AS total FROM entrades";
+        $count_result = $db->query($count_sql);
+        $total_posts = $count_result->fetch_assoc()['total'];
+
+        // Consulta tots els posts ordenats per data de forma descendent
+        $sql = "
+            SELECT e.*, u.nom AS autor_nom, u.cognom AS autor_cognom, c.nombre AS categoria_nom 
+            FROM entrades e
+            JOIN usuaris u ON e.usuari_id = u.id
+            JOIN categories c ON e.categoria_id = c.id
+            ORDER BY e.data DESC
+            LIMIT $posts_per_page OFFSET $offset
+        ";
         $result = $db->query($sql);
     }
     
     // Comprova si hi ha resultats a la consulta
     if ($result->num_rows > 0) {
-        while($row = $result->fetch_assoc()) {
-            $categoria_sql = "SELECT nombre FROM categories WHERE id = ".$row['categoria_id'];
-            $categoria_result = $db->query($categoria_sql);
-            $categoria = $categoria_result->fetch_assoc();
+        while ($row = $result->fetch_assoc()) {
+            $post_date = date("d/m/Y H:i:s", strtotime($row['data']));
             
-            // Mostra les dades de cada entrada dins d'un div amb classe 'post'
             echo "<div class='post'>
-                    <h2>".$row['titol']."</h2>
-                    <p>".$row['descripcio']."</p>
-                    <p class='post-category'>#".$categoria['nombre']."</p>";
+                    <h2><a href='index.php?page=post&id=".$row['id']."'>".$row['titol']."</a></h2>
+                    <p class='post-meta'>
+                        Publicat per <strong>".$row['autor_nom']." ".$row['autor_cognom']."</strong> el ".$post_date."</a>.
+                    </p>
+                    <hr>
+                    <p>".$row['descripcio']."</p>";
 
-            if ($row['usuari_id'] == $current_user_id) {
-                echo "<a href='index.php?page=post&id=".$row['id']."' class='button-post'>Editar</a> 
-                      <a href='actions/delete_post.php?id=".$row['id']."' class='button-post' data-id='".$row['id']."'>Esborrar</a>";
+            // Si l'usuari es el creador dels posts, deixa editar o eliminar-los
+            if ($current_user_id && $row['usuari_id'] == $current_user_id) {
+                echo "<div class='post-actions'>
+                        <a href='index.php?page=form_post&id=".$row['id']."' class='button-post'>Editar</a> 
+                        <a href='actions/delete_post.php?id=".$row['id']."' class='button-post' data-id='".$row['id']."'onclick='return confirm(\"Estàs segur que vols esborrar aquest post?\");'>Esborrar</a>
+                      </div>";
             }
 
-            echo "</div>";
+            echo "<div class='categoria-tag'>
+                      <a href='index.php?categoria=".$row['categoria_nom']."'>#".$row['categoria_nom']."</a>
+                  </div>
+                </div>";
         }
     } else {
         // Si no hi ha entrades
         echo "<p>No hi ha entrades.</p>";
     }
+
+    // Calcula el nombre total de pàgines
+    $total_pages = ceil($total_posts / $posts_per_page);
+
+    // Genera la paginació
+    echo "<div class='pagination'>";
+
+    // Mostra la fletxa per anar enrere
+    if ($current_page > 1) {
+        echo "<a href='index.php?page=".($current_page - 1)."' class='pagination-arrow'>&lt;--</a>";
+    }
+
+    // Mostra el número 1 i punts suspensius si és necessari
+    if ($current_page > 2) {
+        echo "<a href='index.php?page=1'>1</a>";
+        echo "<span class='dots'>...</span>";
+    }
+
+    // Mostra els números al voltant de la pàgina actual
+    $start = max(1, $current_page - 1);
+    $end = min($total_pages, $current_page + 1);
+
+    for ($i = $start; $i <= $end; $i++) {
+        if ($i == $current_page) {
+            echo "<span class='current-page'>$i</span>";
+        } else {
+            echo "<a href='index.php?page=$i'>$i</a>";
+        }
+    }
+
+    // Mostra punts suspensius i l'última pàgina si és necessari
+    if ($current_page < $total_pages - 2) {
+        echo "<span class='dots'>...</span>";
+        echo "<a href='index.php?page=$total_pages'>$total_pages</a>";
+    }
+
+    // Mostra la fletxa per anar endavant
+    if ($current_page < $total_pages) {
+        echo "<a href='index.php?page=".($current_page + 1)."' class='pagination-arrow'>--&gt;</a>";
+    }
+
+    // Form per saltar directament a una pàgina
+    echo "<form method='GET' class='pagination-form'>";
+    echo "<input type='number' name='page' min='1' max='$total_pages' placeholder='Pàgina'>";
+    echo "<button type='submit'>Anar</button>";
+    echo "</form>";
+
+    echo "</div>";
 
     $db->close();
     ?>
@@ -192,14 +316,24 @@ includes/aside.php
         </div>
     <?php else: ?>
     <div class="profile">
-        <img src="/projecte/pages/img/profile_img.png" alt="Profile Avatar" class="profile-avatar">
+        <div class="profile-container">
+            <img src="img/profile_img.png" alt="Profile Avatar" class="profile-avatar">
+            <a href="index.php?page=form_profile" class="edit-icon">
+                <i class="fas fa-pencil-alt"></i>
+            </a>
+        </div>
         
+        <?php if (!empty($_SESSION['message'])): ?>
+            <p class="success-message profile-text"><?php echo htmlspecialchars($_SESSION['message']); ?></p>
+            <?php unset($_SESSION['message']);?>
+        <?php endif; ?>
+
         <p class="profile-text">Hola, <?php echo htmlspecialchars($_SESSION['usuari_nom']); ?>!</p>
 
         <ul class="profile-options">
-            <li><a href="index.php?page=post"><i class="icon-plus"></i>Crear Entrada</a></li>
-            <li><a href="index.php?page=category"><i class="icon-edit"></i>Crear Categoria</a></li>
-            <li><a href="logout.php"><i class="icon-logout"></i>Tancar Sessió</a></li>
+            <li><a href="index.php?page=form_post"><i class="fas fa-plus"></i> Crear Entrada</a></li>
+            <li><a href="index.php?page=category"><i class="fas fa-plus"></i> Crear Categoria</a></li>
+            <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Tancar Sessió</a></li>
         </ul>
     </div>
     <?php endif; ?>
@@ -238,8 +372,8 @@ if ($is_editing) {
     <h2 class="form-title">
         <?= $is_editing ? "Edita la teva entrada" : "Crea una nova entrada" ?>
     </h2>
+    <!-- Formulari per crear o editar una entrada-->
     <form class="form" action="actions/post_action.php" method="POST">
-        <!-- isedit == true -->
         <?php if ($is_editing): ?>
             <input type="hidden" name="id" value="<?= htmlspecialchars($post_data['id']) ?>">
         <?php endif; ?>
@@ -257,7 +391,6 @@ if ($is_editing) {
             $sql = "SELECT * FROM categories";
             $result = mysqli_query($db, $sql);
 
-            // Verificar si la consulta devolvió resultados
             while ($row = mysqli_fetch_assoc($result)) {
                 $selected = $is_editing && $post_data['categoria_id'] == $row['id'] ? 'selected' : '';
                 echo "<option value='".$row['id']."' $selected>".$row['nombre']."</option>";
@@ -271,7 +404,6 @@ if ($is_editing) {
     </form>
 </main>
 
-
 actions/post_action.php
 <?php
 session_start();
@@ -283,28 +415,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $descripcio = trim($_POST['descripcio']);
     $categoria = $_POST['categoria'];
     $usuari_id = $_SESSION['usuari_id'];
-
-    if ($id) {
+    
     // Editar
+    if ($id) {
+        // Consulta per actualitzar un post
         $sql = "UPDATE entrades SET titol = ?, descripcio = ?, categoria_id = ? WHERE id = ? AND usuari_id = ?";
         $stmt = $db->prepare($sql);
         $stmt->bind_param("ssiii", $titol, $descripcio, $categoria, $id, $usuari_id);
 
         if ($stmt->execute()) {
-            header("Location: ../index.php");
+            header("Location: ../index.php?page=post&id=$id");
             exit;
         } else {
             echo "Error al editar l'entrada.";
         }
-    } else {
-    // Crear
+    
+    }
+    // Crear 
+    else {
+        // Consulta per crear un post
         $sql = "INSERT INTO entrades (usuari_id, categoria_id, titol, descripcio, data) 
                 VALUES (?, ?, ?, ?, NOW())";
         $stmt = $db->prepare($sql);
         $stmt->bind_param("iiss", $usuari_id, $categoria, $titol, $descripcio);
 
         if ($stmt->execute()) {
-            header("Location: ../index.php");
+            $new_post_id = $db->insert_id;
+            header("Location: ../index.php?page=post&id=$new_post_id");
             exit;
         } else {
             echo "Error al crear l'entrada.";
@@ -314,7 +451,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 ?>
-
 
 style.css
 /* Paleta de colores */
@@ -684,5 +820,3 @@ footer {
     color: white;
 }
 
-
-ayudame a posicionar bien el aside y los posts. sin que se superpongan, que ocupe cada uno su espacio

@@ -22,10 +22,7 @@
             </a>
         </div>
         
-        <?php if (!empty($_SESSION['message'])): ?>
-            <p class="success-message profile-text"><?php echo htmlspecialchars($_SESSION['message']); ?></p>
-            <?php unset($_SESSION['message']);?>
-        <?php endif; ?>
+        <p class="success-message profile-text"><?php echo htmlspecialchars($messages['profile']); ?></p>
 
         <p class="profile-text">Hola, <?php echo htmlspecialchars($_SESSION['usuari_nom']); ?>!</p>
 

@@ -1,6 +1,6 @@
 <?php
 // Incloure la connexió a la base de dades
-include 'db_connection.php';
+include '../config/db.php';
 
 // Verifica si l'ID del post està present
 if (isset($_GET['id']) && is_numeric($_GET['id'])) {

@@ -1,10 +1,9 @@
 <?php 
 session_start();
 include('includes/header.php');
-include('includes/session.php');
+include('config/utility.php');
 
-$errors = get_errors('errors');
-$success = get_messages('success');
+$messages = get_messages();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['page'])) {
     $_SESSION['current_page'] = $_POST['page'];
@@ -27,7 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['page'])) {
             include('includes/about.php');
         } else if ($_GET['page'] === 'contact') {
             include('includes/contact.php');
-        } 
+        } else if ($_GET['page'] === 'categories') {
+            include('includes/category.php');
+        }
     } else {
         include('includes/posts.php');
     }

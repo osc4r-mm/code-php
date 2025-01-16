@@ -1,8 +1,8 @@
 <section class="posts">
     <?php
-    $current_user_id = $_SESSION['usuari_id'];
+    $current_user_id = isset($_SESSION['usuari_id']) ? $_SESSION['usuari_id'] : null;
     $posts_per_page = 5;
-    $current_page = isset($_GET['pagination']) && is_numeric($_GET['pagination']) ? (int)$_GET['pagination'] : 1;
+    $current_page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
     $offset = ($current_page - 1) * $posts_per_page;
 
     if ($db->connect_error) {
@@ -14,7 +14,7 @@
         
         // Mostra el títol de la categoria
         echo "<h1>Posts de la categoria: " . htmlspecialchars($categoria_nombre) . "</h1>";
-
+        
         // Consulta per obtenir l'id de la categoria
         $categoria_sql = "SELECT id FROM categories WHERE nombre = ?";
         $stmt = $db->prepare($categoria_sql);
@@ -45,13 +45,14 @@
                 LIMIT ? OFFSET ?
             ";
             $stmt = $db->prepare($sql);
+            // Corregimos el bind_param añadiendo los tres parámetros necesarios
             $stmt->bind_param("iii", $categoria_id, $posts_per_page, $offset);
             $stmt->execute();
             $result = $stmt->get_result();
         }
     } else {
         echo "<h1>Benvingut al Blog!</h1>";
-
+        
         // Total de posts
         $count_sql = "SELECT COUNT(*) AS total FROM entrades";
         $count_result = $db->query($count_sql);
@@ -70,7 +71,7 @@
     }
     
     // Comprova si hi ha resultats a la consulta
-    if ($result->num_rows > 0) {
+    if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
             $post_date = date("d/m/Y H:i:s", strtotime($row['data']));
             
@@ -97,7 +98,7 @@
         }
     } else {
         // Si no hi ha entrades
-        echo "<p>No hi ha entrades.</p>";
+        echo "<p>No hi ha entrades en aquesta categoria.</p>";
     }
 
     // Calcula el nombre total de pàgines
@@ -108,12 +109,20 @@
 
     // Mostra la fletxa per anar enrere
     if ($current_page > 1) {
-        echo "<a href='index.php?pagination=".($current_page - 1)."' class='pagination-arrow'>&lt;--</a>";
+        $prev_link = 'index.php?page=' . ($current_page - 1);
+        if (isset($_GET['categoria'])) {
+            $prev_link .= '&categoria=' . urlencode($_GET['categoria']);
+        }
+        echo "<a href='" . $prev_link . "' class='pagination-arrow'>&lt;--</a>";
     }
 
     // Mostra el número 1 i punts suspensius si és necessari
     if ($current_page > 2) {
-        echo "<a href='index.php?pagination=1'>1</a>";
+        $first_link = 'index.php?page=1';
+        if (isset($_GET['categoria'])) {
+            $first_link .= '&categoria=' . urlencode($_GET['categoria']);
+        }
+        echo "<a href='" . $first_link . "'>1</a>";
         echo "<span class='dots'>...</span>";
     }
 
@@ -122,27 +131,42 @@
     $end = min($total_pages, $current_page + 1);
 
     for ($i = $start; $i <= $end; $i++) {
+        $page_link = 'index.php?page=' . $i;
+        if (isset($_GET['categoria'])) {
+            $page_link .= '&categoria=' . urlencode($_GET['categoria']);
+        }
         if ($i == $current_page) {
             echo "<span class='current-page'>$i</span>";
         } else {
-            echo "<a href='index.php?pagination=$i'>$i</a>";
+            echo "<a href='" . $page_link . "'>$i</a>";
         }
     }
 
     // Mostra punts suspensius i l'última pàgina si és necessari
     if ($current_page < $total_pages - 2) {
         echo "<span class='dots'>...</span>";
-        echo "<a href='index.php?pagination=$total_pages'>$total_pages</a>";
+        $last_link = 'index.php?page=' . $total_pages;
+        if (isset($_GET['categoria'])) {
+            $last_link .= '&categoria=' . urlencode($_GET['categoria']);
+        }
+        echo "<a href='" . $last_link . "'>$total_pages</a>";
     }
 
     // Mostra la fletxa per anar endavant
     if ($current_page < $total_pages) {
-        echo "<a href='index.php?pagination=".($current_page + 1)."' class='pagination-arrow'>--&gt;</a>";
+        $next_link = 'index.php?page=' . ($current_page + 1);
+        if (isset($_GET['categoria'])) {
+            $next_link .= '&categoria=' . urlencode($_GET['categoria']);
+        }
+        echo "<a href='" . $next_link . "' class='pagination-arrow'>--&gt;</a>";
     }
 
     // Form per saltar directament a una pàgina
     echo "<form method='GET' class='pagination-form'>";
-    echo "<input type='number' name='pagination' min='1' max='$total_pages' placeholder='Pàgina'>";
+    echo "<input type='number' name='page' min='1' max='$total_pages' placeholder='Pàgina'>";
+    if (isset($_GET['categoria'])) {
+        echo "<input type='hidden' name='categoria' value='" . htmlspecialchars($_GET['categoria']) . "'>";
+    }
     echo "<button type='submit'>Anar</button>";
     echo "</form>";
 

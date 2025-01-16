@@ -1,13 +1,13 @@
 <?php
 session_start();
 include('../config/db.php');
-include('../includes/session.php');
+include('../config/utility.php');
 
 // Verificar si se envió el formulario
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Validacio conexio bd
     if ($db->connect_error) {
-        set_error('error', "S'ha produit un error");
+        set_message('error', "S'ha produit un error al connectar a la base de dades.", 'error');
         header("Location: ../index.php");
         exit();
     }
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Validar camps buits
     if (empty($nom) || empty($cognom) || empty($email) || empty($password)) {
-        set_error('error_register', 'Tots els camps son obligatoris.');
+        set_message('register', 'Tots els camps son obligatoris.', 'error');
         header("Location: ../index.php");
         exit();
     }
@@ -28,20 +28,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Validar nom i cognom
     $nomCognomPattern = "/^[a-zA-Z\-\_\']+$/";
     if (!preg_match($nomCognomPattern, $nom) || !preg_match($nomCognomPattern, $cognom)) {
-        set_error('invalid_nomCognom', 'El format del nom o cognom no es valid.');
+        set_message('nomCognom', 'El format del nom o cognom no es valid.', 'error');
     }
 
     // Validar el email
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        set_error('invalid_email', "El format de l'email no es valid.");
+        set_message('email', "El format de l'email no es valid.", 'error');
     }
 
     // Validar la contrasenya (minim 8 caracters, una majuscula, una minuscula, un numero i un caracter especial)
     $passwordPattern = "/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/";
     if (!preg_match($passwordPattern, $password)) {
-        set_error('invalid_password', 'La contrasenya ha de tenir almenys 8 caràcters, incloent-hi una majúscula, una minúscula, un número i un caràcter especial.');
+        set_message('password', 'La contrasenya ha de tenir almenys 8 caràcters, incloent-hi una majúscula, una minúscula, un número i un caràcter especial.', 'error');
     }
-    if (empty($_SESSION['errors'])) {
+    if (!has_messages()) {
         // Encriptar contrasenya
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
@@ -53,18 +53,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $stmt->bind_param("ssss", $nom, $cognom, $email, $hashed_password);
 
             if ($stmt->execute()) {
-                set_message('success', 'Usuari registrat correctament!');
+                set_message('register', 'Usuari registrat correctament!', 'success');
                 header("Location: ../index.php");
                 exit();
             } else {
-                set_error('error_register', "Error al registrar l'usuari.");
+                set_message('register', "Error al registrar l'usuari.", 'error');
                 header("Location: ../index.php");
                 exit();
             }
 
             $stmt->close();
         } else {
-            set_error('error_register', "Error al registrar l'usuari.");
+            set_message('register', "Error al registrar l'usuari.", 'error');
             header("Location: ../index.php");
             exit();
         }
