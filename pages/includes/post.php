@@ -5,7 +5,7 @@ include '../config/db.php';
 // Verifica si l'ID del post està present
 if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     $post_id = $_GET['id'];
-    $current_user_id = $_SESSION['usuari_id'];
+    $current_user_id = $_SESSION['user']['usuari_id'];
 
     if ($db->connect_error) {
         die("La connexió ha fallat: " . $db->connect_error);

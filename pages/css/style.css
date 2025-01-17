@@ -522,22 +522,18 @@ nav ul li a:hover {
 
 /* Categories page styles */
 .categories-container {
-    max-width: 1200px;
-    margin: 2rem auto;
-    padding: 0 1rem;
-}
-
-.categories-title {
-    text-align: center;
-    color: var(--text-1);
-    margin-bottom: 2rem;
-    font-size: 2rem;
-    font-weight: bold;
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .categories-grid {
+    width: 100%;
+    max-width: 1200px;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 1.5rem;
     padding: 1rem;
 }
@@ -546,7 +542,6 @@ nav ul li a:hover {
     background-color: white;
     border-radius: 12px;
     border: 1px solid var(--border-color);
-    overflow: hidden;
     transition: all 0.3s ease;
 }
 
@@ -561,13 +556,17 @@ nav ul li a:hover {
     padding: 1.5rem;
     text-decoration: none;
     text-align: center;
-    position: relative;
 }
 
 .category-icon {
-    font-size: 2rem;
+    font-size: 1.5rem;
     color: var(--accent-color);
     margin-bottom: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.category-card:hover .category-icon {
+    transform: scale(1.1);
 }
 
 .category-name {
@@ -580,38 +579,30 @@ nav ul li a:hover {
     display: block;
     color: var(--text-3);
     font-size: 0.9rem;
-    margin-top: 0.5rem;
-}
-
-.category-hover {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color: var(--accent-color);
-    color: white;
-    padding: 0.75rem;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
-}
-
-.category-card:hover .category-hover {
-    transform: translateY(0);
-}
-
-.view-posts {
-    font-size: 0.9rem;
-    font-weight: 500;
 }
 
 /* Responsive adjustments */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
+    .categories-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 1100px) {
+    .categories-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 850px) {
     .categories-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 600px) {
     .categories-grid {
         grid-template-columns: 1fr;
     }

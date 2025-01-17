@@ -1,6 +1,7 @@
 <section class="posts">
     <?php
-    $current_user_id = $_SESSION['usuari_id'];
+    $current_user_id = $_SESSION['user']['usuari_id'];
+    $current_category = isset($_GET['categoria']) ? $_GET['categoria'] : "";
     $posts_per_page = 5;
     $current_page = isset($_GET['pagination']) && is_numeric($_GET['pagination']) ? (int)$_GET['pagination'] : 1;
     $offset = ($current_page - 1) * $posts_per_page;
@@ -108,12 +109,14 @@
 
     // Mostra la fletxa per anar enrere
     if ($current_page > 1) {
-        echo "<a href='index.php?pagination=".($current_page - 1)."' class='pagination-arrow'>&lt;--</a>";
+        echo "<a href='index.php?pagination=".($current_page - 1)."&categoria=".($current_category)."' class='pagination-arrow'>&lt;--</a>";
     }
 
     // Mostra el número 1 i punts suspensius si és necessari
     if ($current_page > 2) {
-        echo "<a href='index.php?pagination=1'>1</a>";
+        echo "<a href='index.php?pagination=1&categoria=$current_category'>1</a>";
+    }
+    if ($current_page > 3) {
         echo "<span class='dots'>...</span>";
     }
 
@@ -125,19 +128,21 @@
         if ($i == $current_page) {
             echo "<span class='current-page'>$i</span>";
         } else {
-            echo "<a href='index.php?pagination=$i'>$i</a>";
+            echo "<a href='index.php?pagination=$i&categoria=$current_category'>$i</a>";
         }
     }
 
     // Mostra punts suspensius i l'última pàgina si és necessari
     if ($current_page < $total_pages - 2) {
         echo "<span class='dots'>...</span>";
-        echo "<a href='index.php?pagination=$total_pages'>$total_pages</a>";
+    }
+    if ($current_page < $total_pages - 1) {
+        echo "<a href='index.php?pagination=$total_pages&categoria=$current_category'>$total_pages</a>";
     }
 
     // Mostra la fletxa per anar endavant
     if ($current_page < $total_pages) {
-        echo "<a href='index.php?pagination=".($current_page + 1)."' class='pagination-arrow'>--&gt;</a>";
+        echo "<a href='index.php?pagination=".($current_page + 1)."&categoria=$current_category' class='pagination-arrow'>--&gt;</a>";
     }
 
     // Form per saltar directament a una pàgina

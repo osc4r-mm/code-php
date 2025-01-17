@@ -21,7 +21,7 @@ if ($result && mysqli_num_rows($result) > 0) {
 ?>
 
 <div class="categories-container">
-    <h1 class="categories-title">Categories del Blog</h1>
+    <h1>Categories del Blog</h1>
     
     <div class="categories-grid">
         <?php foreach ($categories as $category): ?>
@@ -32,9 +32,6 @@ if ($result && mysqli_num_rows($result) > 0) {
                     </div>
                     <h2 class="category-name"><?php echo htmlspecialchars($category['nombre']); ?></h2>
                     <span class="post-count"><?php echo $category['post_count']; ?> posts</span>
-                    <div class="category-hover">
-                        <span class="view-posts">Veure posts →</span>
-                    </div>
                 </a>
             </div>
         <?php endforeach; ?>

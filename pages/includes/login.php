@@ -1,8 +1,10 @@
 <div class="login">
-    <span class="error-message"><?php echo $errors['invalid_credentials'] ?? ''; ?></span>
-
     <form class="login-form" action="actions/login_action.php" method="POST">
+        <input type="hidden" name="current_page" value="<?php echo isset($_GET['page']) ? $_GET['page'] : 'home'; ?>">
+
         <h2>Iniciar Sessió</h2>
+        <span class="error-message"><?php echo $messages['credentials']['content']; ?></span>
+
         <label for="email">Email:</label>
         <input type="email" name="email" id="email" required>
         

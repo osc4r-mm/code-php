@@ -1,13 +1,14 @@
 <?php
 session_start();
 require_once '../config/db.php';
+require_once '../config/utility.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $id = isset($_POST['id']) ? $_POST['id'] : null;
     $titol = trim($_POST['titol']);
     $descripcio = trim($_POST['descripcio']);
     $categoria = $_POST['categoria'];
-    $usuari_id = $_SESSION['usuari_id'];
+    $usuari_id = $_SESSION['user']['usuari_id'];
     
     // Editar
     if ($id) {
@@ -20,7 +21,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             header("Location: ../index.php?page=post&id=$id");
             exit;
         } else {
-            echo "Error al editar l'entrada.";
+            set_message('post', "Error a l'editar l'entrada", 'error');
+            header("Location: ../index.php?page=post&id=$id");
+            exit;
         }
     
     }
@@ -37,7 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             header("Location: ../index.php?page=post&id=$new_post_id");
             exit;
         } else {
-            echo "Error al crear l'entrada.";
+            set_message('post', "Error al crear l'entrada", 'error');
+            header("Location: ../index.php");
+            exit;
         }
 
         $db->close();

@@ -1,6 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['usuari_id'])) {
+if (!isset($_SESSION['user']['usuari_id'])) {
     header("Location: login.php");
     exit;
 }
@@ -14,7 +14,7 @@ $post_data = [];
 if ($is_editing) {
     // Obtener datos del post para rellenar el formulario
     $stmt = $db->prepare("SELECT * FROM entrades WHERE id = ? AND usuari_id = ?");
-    $stmt->bind_param("ii", $post_id, $_SESSION['usuari_id']);
+    $stmt->bind_param("ii", $post_id, $_SESSION['user']['usuari_id']);
     $stmt->execute();
     $result = $stmt->get_result();
     $post_data = $result->fetch_assoc();
@@ -30,6 +30,7 @@ if ($is_editing) {
     <h2 class="form-title">
         <?= $is_editing ? "Edita la teva entrada" : "Crea una nova entrada" ?>
     </h2>
+    <span class="error-message"><?php echo $messages['post']['content'] ?? ''; ?></span>
     <!-- Formulari per crear o editar una entrada-->
     <form class="form" action="actions/post_action.php" method="POST">
         <?php if ($is_editing): ?>

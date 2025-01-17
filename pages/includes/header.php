@@ -43,7 +43,7 @@ if (mysqli_num_rows($result) > 0) {
                 echo "<li><a href='index.php?categoria=".$category['nombre']."'>".$category['nombre']."</a></li>";
             }
             ?>
-            <li><a href="index.php?page=categories"><i class="fas fa-tags"></i> Categories</a></li>
+            <li><a href="index.php?page=categories">&#9776; Categories</a></li>
         </ul>
         </nav>
         <script>

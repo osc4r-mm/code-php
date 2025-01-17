@@ -1,5 +1,5 @@
 <aside class="sidebar">
-    <?php if(!isset($_SESSION['usuari_id'])): ?>
+    <?php if(!isset($_SESSION['user']['usuari_id'])): ?>
         <div class="forms">
             <div class="content">
                 <?php 
@@ -22,14 +22,14 @@
             </a>
         </div>
         
-        <p class="success-message profile-text"><?php echo htmlspecialchars($messages['profile']); ?></p>
+        <p class="<?php echo $messages['profile']['type']; ?>-message profile-text"><?php echo $messages['profile']['content']; ?></p>
 
-        <p class="profile-text">Hola, <?php echo htmlspecialchars($_SESSION['usuari_nom']); ?>!</p>
+        <p class="profile-text">Hola, <?php echo htmlspecialchars($_SESSION['user']['nom']); ?>!</p>
 
         <ul class="profile-options">
             <li><a href="index.php?page=form_post"><i class="fas fa-plus"></i> Crear Entrada</a></li>
             <li><a href="index.php?page=category"><i class="fas fa-plus"></i> Crear Categoria</a></li>
-            <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Tancar Sessió</a></li>
+            <li><a href="actions/logout_action.php"><i class="fas fa-sign-out-alt"></i> Tancar Sessió</a></li>
         </ul>
     </div>
     <?php endif; ?>
