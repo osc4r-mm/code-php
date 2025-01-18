@@ -727,6 +727,10 @@ nav ul li a:hover {
     color: var(--text-2);
 }
 
+.search-container {
+    margin-bottom: 20px;
+}
+
 /* Formulario de Login y Registro */
 .forms {
     display: flex;

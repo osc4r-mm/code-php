@@ -1,4 +1,5 @@
 <aside class="sidebar">
+    <?php include('includes/search.php'); ?>
     <?php if(!isset($_SESSION['user']['usuari_id'])): ?>
         <div class="forms">
             <div class="content">

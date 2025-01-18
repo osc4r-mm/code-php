@@ -5,19 +5,19 @@
     
         <h2>Registrat</h2>
         <label for="nom">Nom:</label>
-        <input type="text" name="nom" id="nom" >
+        <input type="text" name="nom" id="nom" required>
         <span class="error-message"><?php echo $messages['nom']['content'] ?? ''; ?></span>
         
         <label for="cognom">Cognom:</label>
-        <input type="text" name="cognom" id="cognom">
+        <input type="text" name="cognom" id="cognom" required>
         <span class="error-message"><?php echo $messages['cognom']['content'] ?? ''; ?></span>
         
         <label for="email">Email:</label>
-        <input type="email" name="email" id="email">
+        <input type="email" name="email" id="email" required>
         <span class="error-message"><?php echo $messages['email']['content'] ?? ''; ?></span>
         
         <label for="password">Contrasenya:</label>
-        <input type="password" name="password" id="password">
+        <input type="password" name="password" id="password" required>
         <span class="error-message"><?php echo $messages['password']['content'] ?? ''; ?></span>
         <br>
         
